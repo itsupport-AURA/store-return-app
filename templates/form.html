@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Store Return / Damage Export</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body class="bg">
+  <div class="page">
+    <header class="header">
+      <h1>Store Return / Damage Export</h1>
+    </header>
+
+    <!-- Flash messages: now inside the page container -->
+    <div id="flash-region">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="flash {{ category }}">
+              <div class="flash-content">{{ message|safe }}</div>
+              <button class="flash-close" aria-label="Dismiss">&times;</button>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+    </div>
+
+    <main class="card">
+      <form method="post" action="/" id="export-form">
+        <div class="grid-2">
+          <div class="field">
+            <label for="form_type">Form Type</label>
+            <select id="form_type" name="form_type">
+              <option value="Store Return">Store Return</option>
+              <option value="Store Return Damage">Store Return Damage</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="CreatedBy">Created By</label>
+            <input id="CreatedBy" name="CreatedBy" type="text" placeholder="employee id or name" required />
+          </div>
+
+          <div class="field">
+            <label for="DocumentNumber">Document Number</label>
+            <input id="DocumentNumber" name="DocumentNumber" type="text" placeholder="reference number" />
+          </div>
+
+          <div class="field">
+            <label for="Source">Source</label>
+            <input id="Source" name="Source" type="text" placeholder="Store / Transit" />
+          </div>
+
+          <div class="field field-span2">
+            <label for="Destination">Destination</label>
+            <input id="Destination" name="Destination" type="text" placeholder="AC1 / Damage Location" />
+          </div>
+        </div>
+
+        <h2 class="section-title">Items</h2>
+
+        <div class="items">
+          <div class="items-head grid-items">
+            <div>Sno</div>
+            <div>ParentCode (SKU)</div>
+            <div>ParentName</div>
+            <div>Quantity</div>
+            <div></div>
+          </div>
+
+          <div id="items-body">
+            <!-- starter row -->
+            <div class="item-row grid-items">
+              <div class="sno">1</div>
+              <div><input name="ParentCode[]" type="text" /></div>
+              <div><input name="ParentName[]" type="text" /></div>
+              <div><input name="Quantity[]" type="number" min="1" step="1" /></div>
+              <div><button type="button" class="icon-btn remove" aria-label="Remove row">&times;</button></div>
+            </div>
+          </div>
+
+          <button type="button" class="btn secondary" id="add-item">+ Add item</button>
+        </div>
+
+        <div class="actions">
+          <button class="btn primary" type="submit">Generate &amp; Export CSV</button>
+        </div>
+      </form>
+    </main>
+
+    <footer class="footer">
+      <small>© {{ 2025 }}</small>
+    </footer>
+  </div>
+
+  <script>
+    // --- Flash dismiss + auto-hide ---
+    (function () {
+      const flashes = document.querySelectorAll('.flash');
+      flashes.forEach(f => {
+        const close = f.querySelector('.flash-close');
+        if (close) close.addEventListener('click', () => f.remove());
+        // auto hide after 5s
+        setTimeout(() => {
+          f.classList.add('fade-out');
+          setTimeout(() => f.remove(), 400);
+        }, 5000);
+      });
+    })();
+
+    // --- Items table: add/remove rows + renumber SNO ---
+    const itemsBody = document.getElementById('items-body');
+    function renumber() {
+      [...itemsBody.querySelectorAll('.item-row')].forEach((row, idx) => {
+        const sno = row.querySelector('.sno');
+        if (sno) sno.textContent = String(idx + 1);
+      });
+    }
+
+    document.getElementById('add-item').addEventListener('click', () => {
+      const tmpl = itemsBody.querySelector('.item-row');
+      const clone = tmpl.cloneNode(true);
+      clone.querySelectorAll('input').forEach(inp => inp.value = '');
+      itemsBody.appendChild(clone);
+      renumber();
+    });
+
+    itemsBody.addEventListener('click', (e) => {
+      if (e.target && e.target.classList.contains('remove')) {
+        const rows = itemsBody.querySelectorAll('.item-row');
+        if (rows.length > 1) {
+          e.target.closest('.item-row').remove();
+          renumber();
+        } else {
+          // just clear inputs if it's the last row
+          e.target.closest('.item-row').querySelectorAll('input').forEach(i => i.value = '');
+        }
+      }
+    });
+  </script>
+</body>
+</html>
